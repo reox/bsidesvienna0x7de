@@ -1,0 +1,42 @@
+\documentclass[11pt,a4paper]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[german]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{xcolor}
+
+\definecolor{shadecolor}{RGB}{0,0,0}
+\definecolor{textcolor}{RGB}{255,255,255}
+
+% Define a Macro to create Image Overlays
+\newcommand{\mybox}[1]{\par\noindent\colorbox{shadecolor}
+{\color{textcolor}\parbox{\dimexpr\textwidth-2\fboxsep\relax}{\fontsize{3em}{3.5em}\selectfont\textbf{{#1}}}}}
+
+\usepackage{tikz}
+\usetheme{AnnArbor}
+
+% Presentation Metadata
+\author{Sebastian Bachmann}
+\title{How we hacked Online Banking Malware}
+\date{22. November 2014}
+
+\begin{document}
+
+\begin{frame}
+    \maketitle
+    \centering
+    B-Sides Vienna
+\end{frame}
+
+{
+\usebackgroundtemplate{\includegraphics[height=\paperheight]{images/fuuu.jpg}}
+\begin{frame}[plain]
+\mybox{FFFFFUUUUU!!!}
+\end{frame}
+}
+
+\begin{frame}
+    symbols should be back now
+\end{frame}
+\end{document}
