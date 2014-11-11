@@ -29,7 +29,7 @@
 \setbeamertemplate{navigation symbols}{}%remove navigation symbols
 
 % Presentation Metadata
-\author{Sebastian Bachmann}
+\author{Sebastian Bachmann \& Tibor Éliás}
 \title{How we hacked Online Banking Malware}
 \date{22. November 2014}
 
@@ -85,6 +85,7 @@
 \begin{itemize}
 	\item[\textbf{\color{green}+}] No ADB enabled
 	\item[\textbf{\color{green}+}] No suspicious App icons shown
+	\item[\textbf{\color{green}+}] Device is not rooted
 	\item[\textbf{\color{red}-}] Unknown sources enabled 
 	\item[\textbf{\color{red}-}] App lists shows a suspicious app
 	\item[\textbf{\color{red}-}] We already knew that the device was compromised
@@ -121,6 +122,7 @@
 		\item One Service
 		\item Three Receivers
 		\item 15+ positive results on VirusTotal
+		\item Already known as ,,Hesperbot''
 	\end{itemize}
 
 \end{frame}
@@ -211,6 +213,7 @@
 
 \section{Shock!}
 \begin{frame}
+	\frametitle{Meanwhile...}
 	\begin{dialogue}
 	\speak{Sebastian} Ahh what?
 	\speak{Tibor} What was that?
@@ -229,16 +232,132 @@
 
 \section{Reversing}
 
-\begin{frame}
-\frametitle{Then just reverse the password generation...}
+\begin{frame}[fragile]
+\frametitle{A closer look at the Malware}
+What's happening on DeviceAdmin onDisableRequest?
+
+\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+if (com.certificate.Cache.getInstance().isContainsSetting("rCode")) {
+  String v14 = com.certificate.Util.EncodeThis("uninstall").replace(" ", "");
+  v13 = v14.substring(0, (v14.length() - 1));
+}
+Object v3 = p9.getSystemService("device_policy");
+if ((com.certificate.ModuleAdminReceiver.IS_SELF_DEACTIVATION) && (v13.length() > 0)) {
+  v3.resetPassword(v13, 0);
+  com.certificate.ModuleAdminReceiver.IS_UNINSTALLING = 1;
+  v3.lockNow();
+}
+\end{lstlisting}
 
 \end{frame}
 
-\section{Ideas}
+\begin{frame}
+\frametitle{A closer look at the Malware}
 
-\section{Recovery}
+\begin{itemize}
+	\item \texttt{EncodeThis} uses RC5\\
+	Blocksize 32bit, Cipher Length 64bit and 12 Rounds
+	\item The Cipher is initialised from \texttt{rCode}
+	\item \texttt{rCode} (=Response Code) is set on Malware Activation
+\end{itemize}
+
+\end{frame}
 
 
-\section{Learning}
+\begin{frame}
+\frametitle{A closer look at the Malware}
+
+\centering
+\includegraphics[height=0.6\textheight]{images/activation.png}
+\end{frame}
+
+\begin{frame}
+\frametitle{Response Code Generation}
+\centering
+\includegraphics[height=0.8\textheight]{images/code_generation.png}
+\end{frame}
+
+\begin{frame}
+
+\mybox{Activiation Code\\is unknown...}
+\newline
+\newline,
+... and there is no chance to get it from anywhere
+
+\end{frame}
+
+{
+\usebackgroundtemplate{\includegraphics[height=\paperheight]{images/deeper.jpg}}
+\begin{frame}[plain]
+\raisebox{16em}{\mybox{We need\\to go deeper}}
+
+\footnotetext{\color{white}Image (CC-PD) from: http://goo.gl/WxHtjp}
+\end{frame}
+}
+
+\begin{frame}
+\frametitle{Open Questions}
+\begin{itemize}
+	\item How was the DeviceAdmin enabled on the device?
+	\item Was or is there any communication with the Botmaster?
+	\item Can we get the Response Code out of the device?
+	\item Is there a way to bruteforce the key?
+	\item Is there another trap?
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bruteforce the Key?}
+\begin{itemize}
+	\item Only 10k different \texttt{rCode}s
+	\item Every uninstall code is 25 chars
+	\item 30s lock after 5 wrong logins
+	\item 5s to enter 5 codes + 30s pause: 48h in average
+	\item + the time to generate all codes first
+\end{itemize}
+
+\textbf{Answer}: probably not
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Can we get the Response Code out of the device?}
+\begin{itemize}
+	\item \texttt{cert.db} is in the Apps userdata storage
+	\item These files are not \texttt{RW} for shell/adb user
+	\item No Root Access on the Device
+	\item Root the Device by Bootloader would delete all data (Bootloader was still locked)
+\end{itemize}
+
+\textbf{Answer}: No, we can not
+\end{frame}
+
+\begin{frame}
+\frametitle{How was the DeviceAdmin enabled?}
+
+\begin{itemize}
+	\item After starting MainActivity start a Service
+	\item Service invokes Activity for DeviceAdmin Request
+	\item Service checks if Admin is set
+	\item DeviceAdmin Activity calls Utility Class
+	\item Utility Class creates a timer and shows the Request every 3s
+\end{itemize}
+
+\textbf{Answer}: The User clicked in Panic on the Activate Button
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{DeviceAdmin Request}
+\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+java.util.Timer v32 = new java.util.Timer();
+android.content.Intent v38 = new android.content.Intent("android.app.action.ADD_DEVICE_ADMIN");
+v38.putExtra("android.app.extra.DEVICE_ADMIN", v30);
+v38.putExtra("android.app.extra.ADD_EXPLANATION", "Allow to protect uninstallation of app");
+v32.scheduleAtFixedRate(new com.certificate.Util$3(v1, v30, v32, p15, v38), ((long) v12), 3000.0);
+\end{lstlisting}
+Timer Creation and DeviceAdmin Request
+
+\end{frame}
 
 \end{document}
