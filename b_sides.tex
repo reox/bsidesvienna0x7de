@@ -23,6 +23,14 @@
     postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
 }
 
+% Command to remove numbering from footnotes
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
 
 \usepackage{tikz}
 \usetheme{CambridgeUS}
@@ -182,7 +190,7 @@
 \begin{frame}[plain]
 
 \raisebox{-10em}{\mybox{Malware found...}}
-\footnotetext{\color{white}Image (CC BY 2.0) from: https://flic.kr/p/cuZZUY}
+\blfootnote{\color{white}Image (CC BY 2.0) from: https://flic.kr/p/cuZZUY}
 \end{frame}
 }
 
@@ -281,7 +289,7 @@ if ((com.certificate.ModuleAdminReceiver.IS_SELF_DEACTIVATION) && (v13.length() 
 
 \mybox{Activiation Code\\is unknown...}
 \newline
-\newline,
+\newline
 ... and there is no chance to get it from anywhere
 
 \end{frame}
@@ -291,7 +299,7 @@ if ((com.certificate.ModuleAdminReceiver.IS_SELF_DEACTIVATION) && (v13.length() 
 \begin{frame}[plain]
 \raisebox{16em}{\mybox{We need\\to go deeper}}
 
-\footnotetext{\color{white}Image (CC-PD) from: http://goo.gl/WxHtjp}
+\blfootnote{\color{white}Image (CC-PD) from: http://goo.gl/WxHtjp}
 \end{frame}
 }
 
@@ -358,6 +366,94 @@ v32.scheduleAtFixedRate(new com.certificate.Util$3(v1, v30, v32, p15, v38), ((lo
 \end{lstlisting}
 Timer Creation and DeviceAdmin Request
 
+\end{frame}
+
+\begin{frame}
+\frametitle{Communication with the Botnet?}
+\begin{itemize}
+	\item Disassembly of whole App needed
+		\begin{itemize}
+			\item[\textbf{\color{green}+}] SMALI Code is available
+			\item[\textbf{\color{green}+}] SMALI to Java worked quite good
+			\item[\textbf{\color{green}+}] No ELF Files used
+			\item[\textbf{\color{green}+}] Not much Obfuscation
+			\item[\textbf{\color{red}-}] Not much time to rebuild all algorithms
+			\item[\textbf{\color{red}-}] Malware extensively use own libs 
+		\end{itemize}
+	\item Run in our own Emulator Environment
+				\begin{itemize}
+			\item[\textbf{\color{green}+}] No Anti Emulator
+			\item[\textbf{\color{green}+}] Log Output enabled
+		\end{itemize}
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Botnet Activation Sequence}
+\includegraphics[height=0.9\textheight]{images/behaviour.png}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{How was the devices activated?}
+\begin{itemize}
+\item Telephone number was entered in faked online banking page
+\item Activation Code can be linked to telephone number
+\item First SMS with \texttt{+<Telnumber>} is registered as admin
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Fake Login Screen}
+\includegraphics[width=\textwidth]{images/abfrage-der-rufnummer.png}
+\blfootnote{Images from http://www.postbank.de}
+\end{frame}
+
+\begin{frame}
+\frametitle{Fake Login Screen}
+\includegraphics[width=\textwidth]{images/aktivierunsgcode-bank.jpg}
+\blfootnote{Image from http://www.postbank.de}
+\end{frame}
+
+\begin{frame}
+\frametitle{Are there any other traps?}
+
+\textbf{Answer}: Probably not ;)
+
+\end{frame}
+
+\section{Hacking}
+\begin{frame}
+\frametitle{What can we do?}
+\begin{itemize}
+	\item Rewrite as own Admin? No, Activation Code needed.
+	\item Send uninstall Code? No, Activation Code needed.
+	\item Decrypt Password? No, ....
+	\item Conclusion: We need the Activation / Response Key!
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{The Response Code}
+	Is well hidden in a \texttt{sqlite3} Database in \texttt{/data/data/com.certificate/databases/cache.db}
+	which is...
+	\begin{itemize}
+		\item Only Readable for the App and root
+		\item We have no root nor the same group as the user
+	\end{itemize}
+	
+	\begin{lstlisting}[basicstyle=\tiny]
+	root@generic_x86:/data/data/com.certificate/databases # ls -al
+ls -al
+-rw-rw---- u0_a46   u0_a46      20480 2014-11-17 06:42 cert.db
+-rw------- u0_a46   u0_a46      12824 2014-11-17 06:42 cert.db-journal
+\end{lstlisting}
 \end{frame}
 
 \end{document}
