@@ -12,6 +12,7 @@
 
 \definecolor{shadecolor}{RGB}{0,0,0}
 \definecolor{textcolor}{RGB}{255,255,255}
+\definecolor{bggrey}{RGB}{63,63,63}
 
 % Define a Macro to create Image Overlays
 \newcommand{\mybox}[1]{\par\noindent\colorbox{shadecolor}
@@ -110,7 +111,7 @@
 	\begin{lstlisting}[language=bash]
 	for app in $(adb shell pm list packages -f | cut -d ':' -f 2 | cut -d '=' -f 1); do 
 	DIR=$(dirname $app | tr '/' '_'); 
-	[[ -d $DIR ]] || mkdir $DIR && :; 
+	[[ ! -d $DIR ]] && mkdir $DIR; 
 	adb pull $app $DIR/; done
 	\end{lstlisting}
 
@@ -440,16 +441,76 @@ Timer Creation and DeviceAdmin Request
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{Abusing Malware}
+Lets use reflection!
+
+\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+final File optimizedDexOutputPath = getDir("outdex", this.MODE_PRIVATE);
+DexClassLoader dcl = new DexClassLoader(dexInternalStoragePath.getAbsolutePath(),optimizedDexOutputPath.getAbsolutePath(),null,this.getClassLoader());
+Class<?> clsMobem = null;
+clsMobem = dcl.loadClass("com.mobem.controller.mobem");
+\end{lstlisting}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Abusing Malware}
+Lets call some Methods!
+\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+// public static boolean IN_RANGE(int currentVal, int minVal, int maxVal)
+Method methMobem = clsMobem.getMethod("IN_RANGE",int.class,int.class,int.class);
+
+Object result = (Object)methMobem.invoke(null, 17,2,16); 
+// 17 > 2 || 17 <16 => false
+boolean res = ((Boolean)result).booleanValue();
+Log.v(TAG,"Method call success: " + res);
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+Generate all the things!
+\begin{lstlisting}[language=java,basicstyle=\scriptsize,stringstyle=\color{orange},identifierstyle=\color{blue}]
+// loadCache will load the cert.db file
+Class <?> clsDatabaseAdapter = dcl.loadClass("com.certificate.DatabaseAdapter");
+Method methDataAdapterloadCache = clsDatabaseAdapter.getMethod("loadCache");
+Object localCache = methDataAdapterloadCache.invoke(instDatabaseAdapter);
+
+Class <?> clsUtil = dcl.loadClass("com.certificate.Util");
+Method methUtilEncodeThis = clsUtil.getDeclaredMethod("EncodeThis",String.class);
+
+// generate Codes!
+Object uninstallCode = (Object)methUtilEncodeThis.invoke(null, "uninstall");
+Object cmdOnCode = (Object)methUtilEncodeThis.invoke(null, "on");
+Object cmdOffCode = (Object)methUtilEncodeThis.invoke(null, "off");
+// TODO correct output of codes...
+\end{lstlisting}
+
+\end{frame}
+
+{
+\setbeamercolor{background canvas}{bg=bggrey}
+\setbeamertemplate{background}{\parbox[c][\paperheight][c]{\paperwidth}{\centering\includegraphics[height=\paperheight]{images/uninstallcodes.PNG}}}
+\begin{frame}[plain]
+
+\mybox{Generate all Codes!}
+
+\end{frame}
+}
+
+\begin{frame}[fragile]
 	\frametitle{The Response Code}
 	Is well hidden in a \texttt{sqlite3} Database in \texttt{/data/data/com.certificate/databases/cache.db}
-	which is...
 	\begin{itemize}
 		\item Only Readable for the App and root
 		\item We have no root nor the same group as the user
+		\item \textbf{But} we can generate now codes from an existing DB!
 	\end{itemize}
 	
 	\begin{lstlisting}[basicstyle=\tiny]
-	root@generic_x86:/data/data/com.certificate/databases # ls -al
+root@generic_x86:/data/data/com.certificate/databases # ls -al
 ls -al
 -rw-rw---- u0_a46   u0_a46      20480 2014-11-17 06:42 cert.db
 -rw------- u0_a46   u0_a46      12824 2014-11-17 06:42 cert.db-journal
