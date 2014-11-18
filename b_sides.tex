@@ -530,11 +530,72 @@ ls -al
 }
 
 \begin{frame}
+\frametitle{Master Key Exploit}
+\begin{itemize}
+	\item Different implementation of ZIP parser in Android
+	(By the way ZIP is a weird format...)
+	\item Duplicate items in ZIP will cause different outcomes
+	\item Original classes.dex for verification
+	\item \textbf{Our} classes.dex for execution! 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
 \frametitle{One Problem left...}
 \large
 \centering
-Where can we get a version of WinRAR that allows duplicate filenames?
+Where can we get a version of WinRAR that allows to pack duplicate filenames?
 
 \end{frame}
+
+\begin{frame}
+\frametitle{One Problem solved!}
+\large
+\centering
+
+Download it from oldversion.com (or similar sites)
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{How to create a MKE APK}
+\centering
+\includegraphics[width=0.9\textwidth]{images/before-mke.png}
+\end{frame}
+
+\begin{frame}
+\frametitle{How to create a MKE APK}
+\centering
+\includegraphics[width=0.9\textwidth]{images/after-mke.png}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{One Last Chance...}
+
+\begin{lstlisting}
+$ adb -r install exploited_apk.apk
+\end{lstlisting}
+
+adb logcat
+\begin{lstlisting}
+I/PackageManager(  389): Package com.certificate codePath changed from /data/app/com.certificate-1.apk to /data/app/com.certificate-2.apk; Retaining data and using new
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Success!}
+
+\begin{lstlisting}
+E/mytag   ( 3075): rCode / 361484
+E/mytag   ( 3075): admin / +380964123254
+E/mytag   ( 3075): on / off
+E/mytag   ( 3075): last_stamp / 1396939544764
+\end{lstlisting}
+
+
+\end{frame}
+
 
 \end{document}
