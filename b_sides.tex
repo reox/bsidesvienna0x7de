@@ -22,6 +22,19 @@
     frame=single,
     breaklines=true,
     postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
+    basicstyle=\ttfamily\smaller,
+    showspaces=false,
+    showtabs=false,
+    numbersep=5pt, 
+    numberstyle=\tiny\color{mygray},
+    commentstyle=\color{green!80!red},
+    rulecolor=\color{black},
+}
+
+\lstdefinestyle{customjava}{
+	language=java,
+	stringstyle=\color{orange},
+	identifierstyle=\color{blue},
 }
 
 % Command to remove numbering from footnotes
@@ -81,6 +94,7 @@
 	\frametitle{The incident}
 	
 	\begin{itemize}
+		\item April 2014
 		\item Online Banking Trojan detected on PC
 		\item Suspicion of mobile component used
 		\item Device: Samsung Galaxy Nexus (i9250), Android 4.1
@@ -245,7 +259,7 @@
 \frametitle{A closer look at the Malware}
 What's happening on DeviceAdmin onDisableRequest?
 
-\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+\begin{lstlisting}[style=customjava]
 if (com.certificate.Cache.getInstance().isContainsSetting("rCode")) {
   String v14 = com.certificate.Util.EncodeThis("uninstall").replace(" ", "");
   v13 = v14.substring(0, (v14.length() - 1));
@@ -358,7 +372,7 @@ if ((com.certificate.ModuleAdminReceiver.IS_SELF_DEACTIVATION) && (v13.length() 
 
 \begin{frame}[fragile]
 \frametitle{DeviceAdmin Request}
-\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+\begin{lstlisting}[style=customjava]
 java.util.Timer v32 = new java.util.Timer();
 android.content.Intent v38 = new android.content.Intent("android.app.action.ADD_DEVICE_ADMIN");
 v38.putExtra("android.app.extra.DEVICE_ADMIN", v30);
@@ -444,11 +458,11 @@ Timer Creation and DeviceAdmin Request
 \frametitle{Abusing Malware}
 Lets use reflection!
 
-\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
+\begin{lstlisting}[style=customjava]
 final File optimizedDexOutputPath = getDir("outdex", this.MODE_PRIVATE);
 DexClassLoader dcl = new DexClassLoader(dexInternalStoragePath.getAbsolutePath(),optimizedDexOutputPath.getAbsolutePath(),null,this.getClassLoader());
-Class<?> clsMobem = null;
-clsMobem = dcl.loadClass("com.mobem.controller.mobem");
+Class<?> mycls = null;
+mycls = dcl.loadClass("com.mobem.controller.mobem");
 \end{lstlisting}
 
 \end{frame}
@@ -457,35 +471,30 @@ clsMobem = dcl.loadClass("com.mobem.controller.mobem");
 
 \begin{frame}[fragile]
 \frametitle{Abusing Malware}
-Lets call some Methods!
-\begin{lstlisting}[language=java,basicstyle=\smaller,stringstyle=\color{orange},identifierstyle=\color{blue}]
-// public static boolean IN_RANGE(int currentVal, int minVal, int maxVal)
-Method methMobem = clsMobem.getMethod("IN_RANGE",int.class,int.class,int.class);
+Lets call some Methods!\\
+For example: \texttt{public static boolean IN\_RANGE(int x, int a, int b)}
+\begin{lstlisting}[style=customjava]
+Method m = mycls.getMethod("IN_RANGE",int.class,int.class,int.class);
 
-Object result = (Object)methMobem.invoke(null, 17,2,16); 
 // 17 > 2 || 17 <16 => false
-boolean res = ((Boolean)result).booleanValue();
-Log.v(TAG,"Method call success: " + res);
+boolean r = (Boolean)m.invoke(null, 17,2,16); 
 \end{lstlisting}
 
 \end{frame}
 
 \begin{frame}[fragile]
 Generate all the things!
-\begin{lstlisting}[language=java,basicstyle=\scriptsize,stringstyle=\color{orange},identifierstyle=\color{blue}]
-// loadCache will load the cert.db file
+\begin{lstlisting}[style=customjava]
+// loadCache will load a prepared cert.db file
 Class <?> clsDatabaseAdapter = dcl.loadClass("com.certificate.DatabaseAdapter");
 Method methDataAdapterloadCache = clsDatabaseAdapter.getMethod("loadCache");
 Object localCache = methDataAdapterloadCache.invoke(instDatabaseAdapter);
-
+// load the Encoder Method
 Class <?> clsUtil = dcl.loadClass("com.certificate.Util");
-Method methUtilEncodeThis = clsUtil.getDeclaredMethod("EncodeThis",String.class);
+Method encode = clsUtil.getDeclaredMethod("EncodeThis",String.class);
 
 // generate Codes!
-Object uninstallCode = (Object)methUtilEncodeThis.invoke(null, "uninstall");
-Object cmdOnCode = (Object)methUtilEncodeThis.invoke(null, "on");
-Object cmdOffCode = (Object)methUtilEncodeThis.invoke(null, "off");
-// TODO correct output of codes...
+encode.invoke(null, "uninstall");
 \end{lstlisting}
 
 \end{frame}
@@ -502,7 +511,7 @@ Object cmdOffCode = (Object)methUtilEncodeThis.invoke(null, "off");
 
 \begin{frame}[fragile]
 	\frametitle{The Response Code}
-	Is well hidden in a \texttt{sqlite3} Database in \texttt{/data/data/com.certificate/databases/cache.db}
+	Is well hidden in a \texttt{sqlite3} Database in \texttt{/data/data/com.certificate/databases/cert.db}
 	\begin{itemize}
 		\item Only Readable for the App and root
 		\item We have no root nor the same group as the user
@@ -539,6 +548,27 @@ ls -al
 	\item \textbf{Our} classes.dex for execution! 
 \end{itemize}
 \end{frame}
+
+
+\begin{frame}
+\frametitle{Brainstorming}
+\large
+\centering
+We need to get \texttt{rCode} and we need a trigger from outside...
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Solution}
+Use the SMS Receiver to execute our code in the Context of the Malware:
+\begin{lstlisting}[style=customjava]
+String db_path = "/data/data/com.certificate/databases/cert.db";
+db = SQLiteDatabase.openDatabase(db_path, null, SQLiteDatabase.OPEN_READONLY);
+db.rawQuery("select * from settings", null);
+\end{lstlisting}
+
+\end{frame}
+
 
 \begin{frame}
 \frametitle{One Problem left...}
@@ -584,6 +614,7 @@ I/PackageManager(  389): Package com.certificate codePath changed from /data/app
 
 \end{frame}
 
+
 \begin{frame}[fragile]
 \frametitle{Success!}
 
@@ -594,7 +625,80 @@ E/mytag   ( 3075): on / off
 E/mytag   ( 3075): last_stamp / 1396939544764
 \end{lstlisting}
 
+\begin{itemize}
+	\item Attacker uses Ukrainian Number
+	\item Last contact was at 2014-04-08 6:45:44 am CEST
+	\item The Attacker disabled the trojan
+	\item Uninstall Code translates to: \texttt{k3zp7iq4r6ggwktjrmt3jlxl3}
+\end{itemize}
 
+\end{frame}
+
+\section{What we have learned}
+
+\begin{frame}
+\frametitle{\texttt{// TODO FIXME}}
+\begin{itemize}
+	\item Never remove Malware if you do not know what it does
+	\item Never remove Malware if you do not know what it does
+	\item Never remove Malware if you do not know what it does
+	\item Never remove Malware if you do not know what it does
+
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{\texttt{// TODO FIXME}}
+\begin{itemize}
+	\item Follow Rules for Forensic Analysis (e.g. SANS) \footnote{http://www.sans.org/reading-room/whitepapers/incident/computer-forensics-weve-incident-investigate-652}
+	\item Try \textbf{not to} be as fast as possible
+	\item Try to be as precise as possible!
+	\item Do not start your analysis on friday afternoon ;)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{\texttt{// TODO FIXME}}
+
+\begin{itemize}
+	\item Make Backups, even from your Smartphone
+	\item If Ransomware hits you, just reset the device...
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{EOF}
+\begin{frame}
+\frametitle{EOF}
+  \begin{columns}
+    \begin{column}{.5\linewidth}
+    \centering
+	\textbf{Sebastian Bachmann}
+	
+	\vspace{2em}
+	
+	http://www.reox.at
+
+	\vspace{2em}	
+	
+	bachmann.s@ikarus.at
+    \end{column}
+    \begin{column}{.5\linewidth}
+    \centering
+	\textbf{Tibor Éliás}
+	
+	\vspace{2em}
+	
+	\qquad
+
+	\vspace{2em}	
+	
+	elias.t@ikarus.at
+    \end{column}
+  \end{columns}
 \end{frame}
 
 
