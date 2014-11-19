@@ -100,7 +100,7 @@
 		\item Online Banking Trojan detected on PC
 		\item Suspicion of mobile component used
 		\item Device: Samsung Galaxy Nexus (i9250), Android 4.1
-		\item And of course: friday afternoon
+		\item Friday afternoon
 	\end{itemize}
 
 \end{frame}
@@ -108,13 +108,17 @@
 \begin{frame}
 \frametitle{Start the Analysis}
 \begin{itemize}
-	\item[\textbf{\color{green}+}] No ADB enabled
-	\item[\textbf{\color{green}+}] No suspicious App icons shown
+	\item[\textbf{\color{green}+}] ADB not enabled
 	\item[\textbf{\color{green}+}] Device is not rooted
-	\item[\textbf{\color{red}-}] Unknown sources enabled 
-	\item[\textbf{\color{red}-}] App lists shows a suspicious app
-	\item[\textbf{\color{red}-}] We already knew that the device was compromised
+	\item[\textbf{\color{black}\texttildelow}] No suspicious App icons shown
+	\item[\textbf{\color{red}--}] Unknown sources enabled 
+	\item[\textbf{\color{red}--}] App lists shows a suspicious app
+	\item[\textbf{\color{red}--}] We already knew that the device was compromised
 \end{itemize}
+
+\blfootnote{
+\textbf{\color{green}+} speak against malware\qquad \textbf{\color{black}\texttildelow} no rating\qquad \textbf{\color{red}--} malware indicator
+}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -131,7 +135,7 @@
 	adb pull $app $DIR/; done
 	\end{lstlisting}
 
-	\item found \texttt{com.certificate-1.apk}
+	\item found suspicious \texttt{com.certificate-1.apk}
 	\end{itemize}	
 \end{frame}
 
@@ -143,11 +147,11 @@
 	\begin{itemize}
 		\item MD5: \texttt{a10fae2ad515b4b76ad950ea5ef76f72}
 		\item Package Name: \texttt{com.certificate}
-		\item Two Activity
+		\item Two Activities
 		\item One Service
 		\item Three Receivers
 		\item 15+ positive results on VirusTotal
-		\item Already known as ,,Hesperbot''
+		\item Already known as ,,Hesperbot'' \footnote{PC Component Analysis: \url{http://www.welivesecurity.com/wp-content/uploads/2013/09/Hesperbot\_Whitepaper.pdf}}
 	\end{itemize}
 
 \end{frame}
@@ -207,7 +211,7 @@
 \begin{frame}[plain]
 
 \raisebox{-10em}{\mybox{Malware found...}}
-\blfootnote{\color{white}Image (CC BY 2.0) from: https://flic.kr/p/cuZZUY}
+\blfootnote{\color{white}Image (CC BY 2.0) from: \url{https://flic.kr/p/cuZZUY}}
 \end{frame}
 }
 
@@ -316,7 +320,7 @@ if ((com.certificate.ModuleAdminReceiver.IS_SELF_DEACTIVATION) && (v13.length() 
 \begin{frame}[plain]
 \raisebox{16em}{\mybox{We need\\to go deeper}}
 
-\blfootnote{\color{white}Image (CC-PD) from: http://goo.gl/WxHtjp}
+\blfootnote{\color{white}Image (CC-PD) from: \url{http://goo.gl/WxHtjp}}
 \end{frame}
 }
 
@@ -408,13 +412,7 @@ Timer Creation and DeviceAdmin Request
 
 
 \begin{frame}
-\frametitle{Botnet Activation Sequence}
-\includegraphics[height=0.9\textheight]{images/behaviour.png}
-\end{frame}
-
-
-\begin{frame}
-\frametitle{How was the devices activated?}
+\frametitle{How was the malware activated?}
 \begin{itemize}
 \item Telephone number was entered in faked online banking page
 \item Activation Code can be linked to telephone number
@@ -424,17 +422,21 @@ Timer Creation and DeviceAdmin Request
 \end{frame}
 
 
+\begin{frame}
+\frametitle{Botnet Activation Sequence}
+\includegraphics[height=0.9\textheight]{images/behaviour.png}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Fake Login Screen}
 \includegraphics[width=\textwidth]{images/abfrage-der-rufnummer.png}
-\blfootnote{Images from http://www.postbank.de}
+\blfootnote{Images from \url{http://www.postbank.de}}
 \end{frame}
 
 \begin{frame}
 \frametitle{Fake Login Screen}
 \includegraphics[width=\textwidth]{images/aktivierunsgcode-bank.jpg}
-\blfootnote{Image from http://www.postbank.de}
 \end{frame}
 
 \begin{frame}
@@ -461,8 +463,7 @@ Timer Creation and DeviceAdmin Request
 Lets use reflection!
 
 \begin{lstlisting}[style=customjava]
-final File optimizedDexOutputPath = getDir("outdex", this.MODE_PRIVATE);
-DexClassLoader dcl = new DexClassLoader(dexInternalStoragePath.getAbsolutePath(),optimizedDexOutputPath.getAbsolutePath(),null,this.getClassLoader());
+DexClassLoader dcl = new DexClassLoader(DEXPath,ODEXPath,null,this.getClassLoader());
 Class<?> mycls = null;
 mycls = dcl.loadClass("com.mobem.controller.mobem");
 \end{lstlisting}
@@ -671,7 +672,7 @@ E/mytag   ( 3075): last_stamp / 1396939544764
 \begin{frame}
 \frametitle{\texttt{// TODO FIXME}}
 \begin{itemize}
-	\item Follow Rules for Forensic Analysis (e.g. SANS) \footnote{http://www.sans.org/reading-room/whitepapers/incident/computer-forensics-weve-incident-investigate-652}
+	\item Follow Rules for Forensic Analysis (e.g. SANS) \footnote{\url{http://www.sans.org/reading-room/whitepapers/incident/computer-forensics-weve-incident-investigate-652}}
 	\item Create a Checklist \& Ruleset for your internal use
 	\item Assume the worst-case
 	\item Build tools to show you dangerous stuff
@@ -702,18 +703,27 @@ Build tools to show you dangerous stuff
 
 
 \section{EOF}
+
 \begin{frame}
 \frametitle{EOF}
+
+\centering
+Source of Hesperbot Cracker\\
+{\footnotesize (Including all Uninstall Codes)}
+\small\url{https://github.com/IKARUSSoftwareSecurity/hesperbot-cracker}
+
+\vspace{4em}
+
   \begin{columns}
     \begin{column}{.5\linewidth}
     \centering
 	\textbf{Sebastian Bachmann}
 	
-	\vspace{2em}
+	\vspace{1em}
 	
-	http://www.reox.at
+	\url{https://www.reox.at}
 
-	\vspace{2em}	
+	\vspace{1em}	
 	
 	bachmann.s@ikarus.at
     \end{column}
@@ -721,11 +731,11 @@ Build tools to show you dangerous stuff
     \centering
 	\textbf{Tibor Éliás}
 	
-	\vspace{2em}
+	\vspace{1em}
 	
 	\qquad
 
-	\vspace{2em}	
+	\vspace{1em}	
 	
 	elias.t@ikarus.at
     \end{column}
